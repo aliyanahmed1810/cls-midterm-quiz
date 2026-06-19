@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intro to CLS Quiz</title>
+    <style>
+        /* Global Reset to ensure single unscrollable screen */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            font-weight: bold;
+        }
+        
+        /* Container centering layout */
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        /* Screens management */
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .active {
+            display: flex;
+        }
+
+        /* Large Bold Text styling */
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 30px;
+            line-height: 1.2;
+        }
+        h2 {
+            font-size: 2.3rem;
+            margin-bottom: 40px;
+            line-height: 1.3;
+        }
+
+        /* Timer display */
+        .timer-box {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            border: 5px solid #000000;
+            padding: 10px 30px;
+        }
+
+        /* Options Grid Layout */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        /* Large bold buttons */
+        .btn {
+            background-color: #ffffff;
+            color: #000000;
+            border: 5px solid #000000;
+            padding: 20px 40px;
+            font-size: 1.7rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+            text-align: left;
+            width: 100%;
+        }
+        .btn:hover {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        /* Specific alignment for start/restart buttons */
+        .start-btn {
+            text-align: center;
+            font-size: 2.5rem;
+            padding: 25px 60px;
+            width: auto;
+        }
+
+        /* Responsive adjustments for mid-size screens */
+        @media (max-width: 900px) {
+            h2 { font-size: 1.8rem; }
+            .btn { font-size: 1.3rem; padding: 15px 25px; border-width: 4px; }
+            .options-grid { grid-template-columns: 1fr; gap: 15px; }
+            .timer-box { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="start-screen" class="screen active">
+            <h1>INTRODUCTION TO CLS<br>MID-TERM QUIZ (30 MCQs)</h1>
+            <button class="btn start-btn" onclick="startQuiz()">START QUIZ</button>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="timer-box">TIME LEFT: <span id="timer">45</span>s</div>
+            <h2 id="question-text">Question Placeholder</h2>
+            <div class="options-grid" id="options-container">
+            </div>
+        </div>
+
+        <div id="end-screen" class="screen">
+            <h1>QUIZ COMPLETED</h1>
+            <h2>Thank you for submitting your responses.</h2>
+            <button class="btn start-btn" onclick="restartQuiz()">RESTART</button>
+        </div>
+    </div>
+
+    <script>
+
+        // ===== GOOGLE FORM CONNECTION SETTINGS FIXED =====
+        const GOOGLE_FORM_ACTION_URL = "https://docs.google.com/forms/d/e/1FAIpQLScmSXbP7T0XyR6RBpKStq9BGJUEmvihZWPePlnH8YEc06CWNQ/formResponse"; 
+
+        // Aapke link se nikale huay saare 30 entry IDs orderwise
+        const GOOGLE_FORM_ENTRY_IDS = [
+            "entry.1633161412", // Q1: Metric prefix 10^-3
+            "entry.172481143",  // Q2: Quality assessment
+            "entry.400226576",  // Q3: Pipette tips material
+            "entry.63062976",   // Q4: Embedded filter function
+            "entry.613237897",  // Q5: Glassware contamination
+            "entry.1305808336", // Q6: Laboratory balances statement
+            "entry.676460609",  // Q7: Non-disposable pipettes soak time
+            "entry.390184789",  // Q8: Centrifuge safety and operation
+            "entry.759805264",  // Q9: Static electricity balance
+            "entry.1474097088", // Q10: Standard precautions statement
+            "entry.1000281015", // Q11: Centrifuge mechanical force
+            "entry.1186141852", // Q12: Fuming or volatile chemicals
+            "entry.1012794474", // Q13: Effective range of ethanol
+            "entry.866386832",  // Q14: 70% ethanol vs 100%
+            "entry.637066689",  // Q15: Transmission-based precautions
+            "entry.780541625",  // Q16: Isolation precaution tier (gloves/gowns)
+            "entry.767254007",  // Q17: Personal respiratory protection
+            "entry.1475872694", // Q18: Airborne precautions pathogens
+            "entry.228345295",  // Q19: Sequence for filling collection tubes
+            "entry.523945838",  // Q20: Invert blood collection tubes
+            "entry.1803500330", // Q21: Light-blue-topped tubes department
+            "entry.1575730609", // Q22: Light-blue-topped tube additive
+            "entry.509453826",  // Q23: Sodium citrate mechanism
+            "entry.318093973",  // Q24: Metric system length unit
+            "entry.402651037",  // Q25: Anticoagulant used in hematology
+            "entry.389095255",  // Q26: Biological hazard symbol
+            "entry.2105085200", // Q27: Purpose of calibrating equipment
+            "entry.2002763569", // Q28: PPE items for eyes protection
+            "entry.1260532566", // Q29: Disposing of used needles
+            "entry.1338822587"  // Q30: Standard temperature in autoclave
+            // Note: Entry id entry.1424084120 and extra entries left out to match your 30 MCQs exactly.
+        ];
+
+        let userAnswers = [];
+
+        // 30 Selected MCQs from your document
+        const quizData = [
+            {
+                question: "Which metric prefix represents a factor of 10^-3 or one-thousandth of a base unit?",
+                options: ["Centi", "Milli", "Micro", "Nano"]
+            },
+            {
+                question: "Quality assessment in a laboratory includes:",
+                options: ["Only blood collection", "Only instrument maintenance", "All steps from patient preparation to result reporting", "Only result reporting"]
+            },
+            {
+                question: "Pipette tips used for standard automated or manual micropipettes are typically constructed from which disposable material?",
+                options: ["Borosilicate glass", "Stainless steel", "Plastic", "Aluminum foil"]
+            },
+            {
+                question: "What is the primary function of an embedded filter inside a micropipette filter tip?",
+                options: ["To speed up the rate of liquid dispensing", "To prevent cross-contamination of the pipette body from aerosols or over-aspiration", "To chemical alter viscous solutions during uptake", "To measure the mass of the fluid being drawn"]
+            },
+            {
+                question: "Glassware that has been contaminated with patient biological specimens must undergo which step before routine washing?",
+                options: ["Immediate drying in a hot air oven", "Polishing with analytical dry powders", "Decontamination using 5% bleach, boiling, or autoclaving", "Storage in a dark, humid incubator"]
+            },
+            {
+                question: "Which of the following statements regarding laboratory balances is correct?",
+                options: ["Electronic balances never require frequent calibration or adjustment.", "A balance should always be positioned on a firm bench away from vibrations, direct sunlight, and draughts.", "Mechanical balances are completely immune to physical dust or chemical spills.", "You should always place chemical powders directly on the balance pan without containers."]
+            },
+            {
+                question: "For how long are non-disposable laboratory pipettes typically allowed to soak in a specialized cleaning solution during maintenance?",
+                options: ["5 minutes", "30 minutes", "12 hours", "24 hours"]
+            },
+            {
+                question: "Which of the following statements regarding centrifuge safety and operation is correct?",
+                options: ["You can safely spin tubes of completely different fluid volumes without balancing the rotor.", "A centrifuge separates fluid components of varying densities by spinning at high speeds.", "Centrifuges use magnetic fields to isolate trace elements like chromium from serum.", "The speed of a centrifuge is measured in metric millibase units."]
+            },
+            {
+                question: "Which type of laboratory balance requires specific protection against static electricity and magnetic fields to remain accurate?",
+                options: ["Mechanical balance", "Electronic balance", "Spring scale", "Triple beam balance"]
+            },
+            {
+                question: "Which of the following statements regarding standard precautions is correct?",
+                options: ["Standard precautions are only used for patients diagnosed with airborne tuberculosis.", "They require proper hand hygiene and personal protective equipment whenever contact is anticipated with blood or body fluids.", "They completely replace the need for specific transmission-based isolation precautions.", "Standard precautions dictate that all used tubes must be stored without rubber stoppers."]
+            },
+            {
+                question: "What basic mechanical force is utilized by a laboratory centrifuge to separate components of varying densities within a fluid?",
+                options: ["Magnetic force", "Centrifugal force", "Electrostatic force", "Friction force"]
+            },
+            {
+                question: "Fuming or volatile chemicals such as strong solvent acids and chemical bases must always be opened and handled under which protective device?",
+                options: ["Biosafety Level 1 open bench", "Fume hood", "Standard laboratory incubator", "Heat block shield"]
+            },
+            {
+                question: "What is the most effective concentration range of ethanol or isopropyl alcohol when utilized as an antiseptic or disinfectant?",
+                options: ["10% to 20%", "40% to 50%", "60% to 80%", "95% to 100%"]
+            },
+            {
+                question: "Why is 70% ethanol considered more effective for microbial protein denaturation and disinfection than 100% absolute ethanol?",
+                options: ["100% ethanol evaporates too slowly from biological surfaces", "The water content in 70% ethanol facilitates entry into the cell wall to denature structural and enzymatic proteins", "70% ethanol reacts chemically with plasticware to release chlorine gas", "100% ethanol cannot dissolve lipids or cell membranes"]
+            },
+            {
+                question: "Which statement about transmission-based precautions is correct?",
+                options: ["Contact Precautions are used for airborne diseases", "Airborne Precautions require an N95 mask and special ventilation", "Droplet Precautions are only for blood collection equipment", "Gloves and gowns are optional in Contact Precautions"]
+            },
+            {
+                question: "Which isolation precaution tier requires the use of gloves and gowns to prevent microbes from spreading via direct skin-to-skin contact or contaminated objects?",
+                options: ["Airborne Precautions", "Droplet Precautions", "Contact Precautions", "Standard universal precautions only"]
+            },
+            {
+                question: "What form of personal respiratory protection must healthcare personnel wear when entering a room under Airborne Precautions?",
+                options: ["Standard surgical mask", "Plastic face shield", "N95 respirator mask", "Cloth face covering"]
+            },
+            {
+                question: "Airborne precautions are strictly implemented for patients infected with which of the following respiratory pathogens?",
+                options: ["Influenza virus", "Whooping cough (Pertussis)", "Tuberculosis (Mycobacterium tuberculosis)", "Standard common cold coronaviruses"]
+            },
+            {
+                question: "Which administrative standard or guidelines suggest a specific, universal sequence for filling collection tubes during blood collection?",
+                options: ["Creative Commons License (CCL)", "Clinical and Laboratory Standards Institute (CLSI)", "Materials Safety Data Sheets (MSDS)", "Bioterrorism Category Matrix"]
+            },
+            {
+                question: "Why must blood collection tubes containing chemical additives or anticoagulants be inverted immediately after venipuncture?",
+                options: ["To induce immediate hemolysis of red blood cells", "To ensure proper mixing of the additive with the blood sample", "To increase the vacuum strength inside the tube stopper", "To separate serum from plasma without centrifugation"]
+            },
+            {
+                question: "In which specific area or department of the clinical laboratory are light-blue-topped tubes primarily processed?",
+                options: ["Blood Banking / Immunohematology", "Coagulation section", "Clinical Chemistry division", "Urinalysis and microscopy"]
+            },
+            {
+                question: "What is the primary chemical additive or anticoagulant present inside a light-blue-topped blood collection tube?",
+                options: ["Potassium oxalate", "Sodium citrate", "Lithium heparin", "Ethylenediaminetetraacetic acid (EDTA)"]
+            },
+            {
+                question: "What is the specific chemical mechanism by which sodium citrate prevents blood from clotting inside the collection tube?",
+                options: ["It destroys the fibrinogen molecules directly", "It binds calcium ions which are essential for the coagulation cascade", "It activates antithrombin III to dissolve clots", "It breaks down blood cell membranes"]
+            },
+            {
+                question: "What base unit is universally utilized within the metric system to express lengths or distances in a clinical setting?",
+                options: ["Gram", "Liter", "Meter", "Second"]
+            },
+            {
+                question: "Which of the following is the most common anticoagulant used in hematology testing?",
+                options: ["Sodium citrate", "Heparin", "EDTA", "Potassium fluoride"]
+            },
+            {
+                question: "Which of the following laboratory symbols indicates a biological hazard?",
+                options: ["Radiation symbol", "Flame symbol", "Biohazard symbol", "Corrosion symbol"]
+            },
+            {
+                question: "What is the primary purpose of calibrating laboratory equipment?",
+                options: ["To increase specimen volume", "To ensure accurate and reliable measurements", "To reduce reagent consumption", "To improve specimen color"]
+            },
+            {
+                question: "Which of the following personal protective equipment (PPE) items protects the eyes from chemical splashes and biological hazards?",
+                options: ["Surgical mask", "Gloves", "Laboratory coat", "Safety goggles"]
+            },
+            {
+                question: "What is the most appropriate method for disposing of used needles after blood collection?",
+                options: ["Place them directly into a sharps container without recapping", "Recap the needle and throw it in regular trash", "Break the needle before disposal", "Place it in a biohazard bag with gloves and tissues"]
+            },
+            {
+                question: "What is the standard temperature commonly used in an autoclave for sterilization?",
+                options: ["37°C", "56°C", "100°C", "121°C"]
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let timeLeft = 45;
+        let timerInterval;
+
+        function startQuiz() {
+            document.getElementById('start-screen').classList.remove('active');
+            document.getElementById('quiz-screen').classList.add('active');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            clearInterval(timerInterval);
+            timeLeft = 45;
+            document.getElementById('timer').textContent = timeLeft;
+
+            if (currentQuestionIndex < quizData.length) {
+                const currentQuestion = quizData[currentQuestionIndex];
+                document.getElementById('question-text').textContent = `${currentQuestionIndex + 1}. ${currentQuestion.question}`;
+                
+                const optionsContainer = document.getElementById('options-container');
+                optionsContainer.innerHTML = '';
+
+                const prefixes = ['A) ', 'B) ', 'C) ', 'D) '];
+
+                currentQuestion.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'btn';
+                    button.textContent = prefixes[index] + option;
+                    button.onclick = () => selectOption(option);
+                    optionsContainer.appendChild(button);
+                });
+
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    document.getElementById('timer').textContent = timeLeft;
+                    if (timeLeft <= 0) {
+                        nextQuestion();
+                    }
+                }, 1000);
+            } else {
+                endQuiz();
+            }
+        }
+
+        function selectOption(selectedOption) {
+            userAnswers[currentQuestionIndex] = selectedOption;
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            // If time runs out, save blank response for that question
+            if (userAnswers[currentQuestionIndex] === undefined) {
+                userAnswers[currentQuestionIndex] = "";
+            }
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        function submitToGoogleForm() {
+            // URLSearchParams format handles urlencoded form submissions perfectly without CORS payload blocks
+            const formData = new URLSearchParams();
+
+            userAnswers.forEach((answer, index) => {
+                const entryId = GOOGLE_FORM_ENTRY_IDS[index];
+                if (entryId) {
+                    formData.append(entryId, answer);
+                }
+            });
+
+            fetch(GOOGLE_FORM_ACTION_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData.toString()
+            })
+            .then(() => {
+                console.log("Quiz responses successfully submitted!");
+            })
+            .catch(error => {
+                console.error("Form submission error:", error);
+            });
+        }
+
+        function endQuiz() {
+            clearInterval(timerInterval);
+            submitToGoogleForm();
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('end-screen').classList.add('active');
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            userAnswers = [];
+            document.getElementById('end-screen').classList.remove('active');
+            document.getElementById('start-screen').classList.add('active');
+        }
+    </script>
+</body>
+</html>
